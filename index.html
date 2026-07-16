@@ -6,11 +6,11 @@
     <title>Mapa Mental: Parada Mayor</title>
     
     <!-- React y ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    <!-- Babel para compilar JSX en el navegador -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Babel para compilar JSX en el navegador (Versión más estable para standalone) -->
+    <script src="https://unpkg.com/@babel/standalone@7.23.9/babel.min.js"></script>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -81,7 +81,8 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel" data-presets="react" data-type="module">
+    <!-- Script de Babel simplificado. Removimos los pragmas conflictivos y el data-type -->
+    <script type="text/babel" data-type="module">
         const { useState, useEffect, useRef } = React;
 
         // Íconos SVG
@@ -205,7 +206,7 @@
           ]
         };
 
-        // El nodo se ha sacado fuera de App para mejorar el rendimiento drásticamente
+        // Componente TreeNode para dibujar los elementos de forma recursiva
         const TreeNode = ({ node, expandedNodes, selectedNode, onSelect, onToggle }) => {
           const isExpanded = expandedNodes[node.id];
           const hasChildren = node.children && node.children.length > 0;
@@ -286,7 +287,6 @@
           });
           const [selectedNode, setSelectedNode] = useState(mindMapData);
           
-          // Estados para el Zoom y el Panning (Arrastrar)
           const [zoom, setZoom] = useState(1);
           const [pan, setPan] = useState({ x: 0, y: 0 });
           const [isDragging, setIsDragging] = useState(false);
@@ -295,7 +295,6 @@
           const containerRef = useRef(null);
           const contentRef = useRef(null);
 
-          // Función para auto-ajustar (Fit to screen) con protección
           const fitToScreen = () => {
             if (containerRef.current && contentRef.current) {
               const container = containerRef.current.getBoundingClientRect();
@@ -303,18 +302,16 @@
               const contentHeight = contentRef.current.scrollHeight;
               
               if(contentWidth > 0 && contentHeight > 0) {
-                  // Calcula la escala necesaria para que quepa todo el diagrama (con 5% de margen)
                   const scaleX = (container.width * 0.95) / contentWidth; 
                   const scaleY = (container.height * 0.95) / contentHeight;
                   
                   const newScale = Math.min(scaleX, scaleY, 1); 
                   setZoom(newScale);
-                  setPan({ x: 0, y: 0 }); // Centra el diagrama
+                  setPan({ x: 0, y: 0 }); 
               }
             }
           };
 
-          // Auto-ajustar al inicio y cuando cambia el tamaño de la ventana
           useEffect(() => {
             const timer = setTimeout(fitToScreen, 100); 
             const handleResize = () => fitToScreen();
@@ -358,11 +355,7 @@
 
           return (
             <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans overflow-hidden">
-              
-              {/* Contenedor Izquierdo */}
               <div className="flex-1 flex flex-col relative h-[60vh] md:h-screen">
-                
-                {/* Panel Superior */}
                 <div className="w-full flex justify-between items-center p-6 bg-slate-50/90 backdrop-blur z-30 border-b border-slate-200 shadow-sm relative">
                   <div>
                     <h1 className="text-2xl font-bold text-slate-800">Plan de Mantenimiento</h1>
@@ -392,7 +385,6 @@
                   </div>
                 </div>
 
-                {/* Área del mapa mental interactivo (Zoom y Arrastre) */}
                 <div 
                   ref={containerRef}
                   className={`flex-1 overflow-hidden w-full flex justify-center items-start bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
@@ -424,7 +416,6 @@
                   </div>
                 </div>
                 
-                {/* Leyenda Inferior */}
                 <div className="absolute bottom-6 left-0 w-full flex justify-center z-30 pointer-events-none">
                   <div className="bg-white border border-slate-300 px-6 py-2 rounded-full shadow-lg text-sm font-semibold text-slate-600 flex items-center gap-2 pointer-events-auto">
                     <span>Paquetes de Trabajo (Work Packages)</span>
@@ -433,7 +424,6 @@
                 </div>
               </div>
 
-              {/* Panel de Detalles Derecho */}
               <div className="w-full md:w-96 bg-white border-t md:border-t-0 md:border-l border-slate-200 shadow-xl p-6 flex flex-col h-[40vh] md:h-screen z-50 overflow-y-auto">
                 <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
                   <InfoIcon className="text-blue-500 w-6 h-6" />
