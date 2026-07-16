@@ -68,6 +68,29 @@
             transform: translateX(-50%);
         }
         
+        /* Reglas especiales para el modo vertical (checklist) */
+        .css-tree ul. \!flex-col {
+            align-items: center;
+        }
+        .css-tree li. \!float-none::before, .css-tree li. \!float-none::after {
+            display: none; /* Oculta las líneas horizontales de conexión entre hermanos */
+        }
+        .css-tree li. \!float-none {
+            padding-top: 15px; /* Espacio superior para la línea vertical de entrada */
+        }
+        /* Línea vertical que conecta un hijo con el siguiente en modo checklist */
+        .css-tree li. \!float-none:not(:first-child)::before {
+            content: '';
+            position: absolute;
+            display: block;
+            top: -5px; /* Empieza donde terminó el bloque anterior */
+            left: 50%;
+            border-left: 3px solid #94a3b8;
+            width: 0;
+            height: 20px; /* Cubre el padding-top */
+            z-index: 0;
+        }
+        
         /* Animación suave para el panel derecho */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
@@ -81,11 +104,11 @@
 <body>
     <div id="root"></div>
 
-    <!-- Script de Babel simplificado. Removimos los pragmas conflictivos y el data-type -->
     <script type="text/babel" data-type="module">
         const { useState, useEffect, useRef } = React;
 
         // Íconos SVG
+        const CheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
         const SettingsIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
         const ShieldAlertIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>;
         const WrenchIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>;
@@ -99,6 +122,41 @@
         const FocusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>;
         const ClipboardCheckIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M15 2H9a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1z"/><path d="m9 14 2 2 4-4"/></svg>;
 
+        const createRequisitosPrevios = (prefix) => ({
+          id: `${prefix}-req`,
+          title: 'Requisitos Previos',
+          subtitle: 'PRE-PARADA',
+          type: 'phase',
+          icon: <ClipboardCheckIcon className="w-5 h-5 text-emerald-500" />,
+          description: 'Listado general de requerimientos logísticos, de equipos, diseño y medio ambiente necesarios antes de iniciar.',
+          children: [
+            {
+              id: `${prefix}-req-wp1`, title: 'WP 1: Terreno', type: 'wp', description: 'Requerimientos de terreno, topografía y medio ambiente.',
+              children: [
+                { id: `${prefix}-req-t1`, title: 'Capacidad Portante', type: 'task', description: 'Verificar la capacidad portante del terreno.' },
+                { id: `${prefix}-req-t2`, title: 'Topografía', type: 'task', description: 'Control de topografía (Todos los días).' },
+                { id: `${prefix}-req-t3`, title: 'Dique Residuos', type: 'task', description: 'Construcción de dique para manejo de residuos.' }
+              ]
+            },
+            {
+              id: `${prefix}-req-wp2`, title: 'WP 2: Equipos', type: 'wp', description: 'Andamios, generadores y suministros.',
+              children: [
+                { id: `${prefix}-req-t4`, title: 'Generadores', type: 'task', description: 'Disponibilidad de Generador 480V y Generador 220V.' },
+                { id: `${prefix}-req-t5`, title: 'Andamios', type: 'task', description: 'Andamios (Listado de necesidades).' },
+                { id: `${prefix}-req-t6`, title: 'Consumibles', type: 'task', description: 'Suministro y control de consumibles.' }
+              ]
+            },
+            {
+              id: `${prefix}-req-wp3`, title: 'WP 3: Doc.', type: 'wp', description: 'Listados, hojas de vida y procesos de ingeniería.',
+              children: [
+                { id: `${prefix}-req-t7`, title: 'Hojas de Vida', type: 'task', description: 'Listado general de Bases, Torres y Hojas de vida.' },
+                { id: `${prefix}-req-t8`, title: 'Ingeniería', type: 'task', description: 'Aprobación de Estándar, Diseño y Autorización.' },
+                { id: `${prefix}-req-t9`, title: 'Filtración', type: 'task', description: 'Proceso de filtración (4 semanas antes).' }
+              ]
+            }
+          ]
+        });
+
         const mindMapData = {
           id: 'root',
           title: 'La Parada Mayor',
@@ -108,40 +166,6 @@
           description: 'La Parada Mayor es el evento de mantenimiento planificado más crítico e importante. Implica detener por completo la operación del equipo o planta por un período extendido. Su objetivo es realizar intervenciones profundas, reemplazar componentes mayores y garantizar la confiabilidad del equipo para el siguiente ciclo operativo.',
           children: [
             {
-              id: 'req',
-              title: 'Requisitos Previos',
-              subtitle: 'PRE-PARADA',
-              type: 'phase',
-              icon: <ClipboardCheckIcon className="w-5 h-5 text-emerald-500" />,
-              description: 'Listado general de requerimientos logísticos, de equipos, diseño y medio ambiente necesarios antes de iniciar.',
-              children: [
-                {
-                  id: 'req-wp1', title: 'WP 1: Terreno', type: 'wp', description: 'Requerimientos de terreno, topografía y medio ambiente.',
-                  children: [
-                    { id: 'req-t1', title: 'Capacidad Portante', type: 'task', description: 'Verificar la capacidad portante del terreno.' },
-                    { id: 'req-t2', title: 'Topografía', type: 'task', description: 'Control de topografía (Todos los días).' },
-                    { id: 'req-t3', title: 'Dique Residuos', type: 'task', description: 'Construcción de dique para manejo de residuos.' }
-                  ]
-                },
-                {
-                  id: 'req-wp2', title: 'WP 2: Equipos', type: 'wp', description: 'Andamios, generadores y suministros.',
-                  children: [
-                    { id: 'req-t4', title: 'Generadores', type: 'task', description: 'Disponibilidad de Generador 480V y Generador 220V.' },
-                    { id: 'req-t5', title: 'Andamios', type: 'task', description: 'Andamios (Listado de necesidades).' },
-                    { id: 'req-t6', title: 'Consumibles', type: 'task', description: 'Suministro y control de consumibles.' }
-                  ]
-                },
-                {
-                  id: 'req-wp3', title: 'WP 3: Doc.', type: 'wp', description: 'Listados, hojas de vida y procesos de ingeniería.',
-                  children: [
-                    { id: 'req-t7', title: 'Hojas de Vida', type: 'task', description: 'Listado general de Bases, Torres y Hojas de vida.' },
-                    { id: 'req-t8', title: 'Ingeniería', type: 'task', description: 'Aprobación de Estándar, Diseño y Autorización.' },
-                    { id: 'req-t9', title: 'Filtración', type: 'task', description: 'Proceso de filtración (4 semanas antes).' }
-                  ]
-                }
-              ]
-            },
-            {
               id: '8k',
               title: '8000 Horas',
               subtitle: 'INCENDIARIAS',
@@ -149,6 +173,7 @@
               icon: <ShieldAlertIcon className="w-5 h-5 text-orange-500" />,
               description: 'Mantenimiento preventivo de primer nivel mayor. A las 8,000 horas de operación, el enfoque suele estar en la inspección y certificación de sistemas críticos de seguridad.',
               children: [
+                createRequisitosPrevios('8k'),
                 { 
                   id: '8k-wp1', 
                   title: 'WP 1: Incendiarias', 
@@ -172,6 +197,7 @@
               icon: <WrenchIcon className="w-5 h-5 text-blue-500" />,
               description: 'Representa el mantenimiento de media vida. Intervención de Part 1 y Part 2.',
               children: [
+                createRequisitosPrevios('16k'),
                 { id: '16k-wp1', title: 'WP 1: Part 1', type: 'wp', description: 'Reemplazo de bombas hidráulicas (Part 1).' },
                 { id: '16k-wp2', title: 'WP 2: Part 2', type: 'wp', description: 'Inspección de válvulas principales (Part 2).' },
                 { id: '16k-wp3', title: 'WP 3: Inyección', type: 'wp', description: 'Calibración de sistemas de inyección.' }
@@ -185,6 +211,7 @@
               icon: <WrenchIcon className="w-5 h-5 text-blue-500" />,
               description: 'Intervención mayor. A las 24,000 horas se hace reemplazo o reconstrucción total del "Tren de Rodaje".',
               children: [
+                createRequisitosPrevios('24k'),
                 { id: '24k-wp1', title: 'WP 1: Part 1', type: 'wp', description: 'Mantenimiento de componentes mayores Part 1.' },
                 { id: '24k-wp2', title: 'WP 2: Tren Rodaje', type: 'wp', description: 'Desmontaje de orugas, cadenas y reemplazo de rodillos.' },
                 { id: '24k-wp3', title: 'WP 3: Rueda Guía', type: 'wp', description: 'Alineación y cambio de rueda guía (Idler).' }
@@ -198,6 +225,7 @@
               icon: <SettingsIcon className="w-5 h-5 text-blue-500" />,
               description: 'El "Overhaul" o reconstrucción general. Reemplazo de la Corona de Giro.',
               children: [
+                createRequisitosPrevios('40k'),
                 { id: '40k-wp1', title: 'WP 1: Part 1', type: 'wp', description: 'Mantenimiento y reconstrucción de componentes Part 1.' },
                 { id: '40k-wp2', title: 'WP 2: Part 2', type: 'wp', description: 'Mantenimiento y reconstrucción de componentes Part 2.' },
                 { id: '40k-wp3', title: 'WP 3: Corona', type: 'wp', description: 'Izaje de superestructura y reemplazo de la Corona de Giro.' }
@@ -207,18 +235,40 @@
         };
 
         // Componente TreeNode para dibujar los elementos de forma recursiva
-        const TreeNode = ({ node, expandedNodes, selectedNode, onSelect, onToggle }) => {
+        const TreeNode = ({ node, expandedNodes, selectedNode, onSelect, onToggle, isolatedNodeId, onIsolate, completedTasks, onToggleTask, forceExpand }) => {
           const isExpanded = expandedNodes[node.id];
           const hasChildren = node.children && node.children.length > 0;
           const isSelected = selectedNode?.id === node.id;
           const isWorkPackage = node.type === 'wp';
           const isTask = node.type === 'task';
+          const isCompleted = completedTasks[node.id];
 
+          // Determinar si este nodo debe mostrarse basado en el aislamiento.
+          // Si un nodo está aislado, solo se muestran: el nodo raíz, el nodo aislado y sus descendientes.
+          // Los hermanos del nodo aislado se ocultan.
+          // Dado que el renderizado es recursivo, el padre del nodo aislado renderizará a su hijo (el aislado), 
+          // pero debemos evitar que renderice a los demás hermanos.
+          
           return (
             <li>
               <div className="flex flex-col items-center group relative z-10">
                 <div 
+                  id={`node-${node.id}`}
                   onClick={() => onSelect(node)}
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    // Permitir aislamiento en cualquier nivel (excepto root y task para evitar confusiones, aunque se podría)
+                    if (node.type !== 'root' && node.type !== 'task' && isolatedNodeId !== node.id) {
+                      onIsolate(node.id);
+                      // NUEVO: Forzar la expansión del nodo al aislarlo
+                      if (hasChildren && !isExpanded) {
+                          forceExpand(node.id);
+                      }
+                    } else if (isolatedNodeId === node.id || node.type === 'root') {
+                      // Restablecer si se hace doble clic en el nodo ya aislado o en la raíz
+                       onIsolate(null);
+                    }
+                  }}
                   className={`
                     relative cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md
                     flex flex-col items-center justify-center bg-white border-2
@@ -226,8 +276,10 @@
                     ${node.type === 'root' ? 'w-64 p-4 rounded-xl' : ''}
                     ${node.type === 'phase' ? 'w-48 p-3 rounded-lg mt-4' : ''}
                     ${isWorkPackage ? 'w-28 min-h-16 p-2 rounded-2xl mt-4 !border-4 !border-slate-400 bg-slate-50 hover:!border-blue-400 flex items-center justify-center' : ''}
-                    ${isTask ? 'w-32 p-2 rounded-lg mt-4 border-dashed border-2 border-emerald-400 bg-emerald-50 hover:border-emerald-500 flex items-center justify-center' : ''}
+                    ${isTask ? `w-36 p-3 rounded-lg mt-4 border-dashed border-2 flex flex-col items-center justify-center gap-2 ${isCompleted ? 'border-emerald-600 bg-emerald-100 opacity-70' : 'border-emerald-400 bg-emerald-50 hover:border-emerald-500'}` : ''}
+                    ${isolatedNodeId === node.id ? 'ring-4 ring-orange-300' : ''} 
                   `}
+                  title={node.type !== 'root' && node.type !== 'task' ? "Doble clic para aislar esta rama" : node.type === 'root' ? "Doble clic para restaurar vista" : ""}
                 >
                   {!isWorkPackage && !isTask ? (
                     <React.Fragment>
@@ -243,10 +295,32 @@
                         </p>
                       )}
                     </React.Fragment>
-                  ) : (
-                    <span className={`text-xs font-bold text-center leading-tight ${isTask ? 'text-emerald-700' : 'text-slate-600'}`}>
+                  ) : isWorkPackage ? (
+                    <span className="text-xs font-bold text-center leading-tight text-slate-600">
                       {node.title}
                     </span>
+                  ) : (
+                    // Es una tarea (Task)
+                    <React.Fragment>
+                      <span className={`text-xs font-bold text-center leading-tight transition-all ${isCompleted ? 'text-emerald-800 line-through' : 'text-emerald-700'}`}>
+                        {node.title}
+                      </span>
+                      {/* Botón de Checkbox personalizado */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation(); // Evita que se seleccione el nodo al hacer clic en el checkbox
+                          onToggleTask(node.id);
+                        }}
+                        className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
+                          isCompleted 
+                            ? 'bg-emerald-500 border-emerald-600 text-white shadow-inner' 
+                            : 'bg-white border-emerald-300 hover:bg-emerald-50 text-transparent'
+                        }`}
+                        title="Marcar como completada"
+                      >
+                         <CheckIcon />
+                      </button>
+                    </React.Fragment>
                   )}
 
                   {hasChildren && (
@@ -262,18 +336,66 @@
 
               {hasChildren && (
                  <div className={`transition-all duration-500 origin-top ${isExpanded ? 'scale-y-100 opacity-100 h-auto' : 'scale-y-0 opacity-0 h-0 overflow-hidden'}`}>
-                   <ul>
-                     {node.children.map(child => (
-                       <TreeNode 
-                         key={child.id} 
-                         node={child} 
-                         expandedNodes={expandedNodes}
-                         selectedNode={selectedNode}
-                         onSelect={onSelect}
-                         onToggle={onToggle}
-                       />
-                     ))}
-                   </ul>
+                   {isExpanded && (
+                     <ul>
+                       {node.children.map(child => {
+                         // Lógica de filtrado para el aislamiento:
+                         // Si hay un nodo aislado, un nodo 'child' debe renderizarse SÓLO si pertenece 
+                         // a la misma rama vertical (ancestro o descendiente) que el nodo aislado.
+                         
+                         let shouldRender = true;
+                         
+                         if (isolatedNodeId) {
+                             // Función recursiva para buscar si el nodo 'n' contiene (o es) el 'idToFind'
+                             const isDescendantOrSelf = (n, idToFind) => {
+                                 if (n.id === idToFind) return true;
+                                 if (!n.children) return false;
+                                 return n.children.some(c => isDescendantOrSelf(c, idToFind));
+                             };
+                             
+                             // 1. ¿El 'child' contiene al nodo aislado? (El child es un ancestro o el propio nodo aislado)
+                             const childContainsIsolated = isDescendantOrSelf(child, isolatedNodeId);
+                             
+                             // 2. ¿El nodo aislado contiene al 'child'? (El child es un descendiente del nodo aislado)
+                             // Para verificar esto, necesitamos la ruta inversa. Una forma más sencilla
+                             // es aprovechar que estamos renderizando de arriba hacia abajo.
+                             // Si el nodo actual (node) ya fue validado y ES el nodo aislado, o desciende de él,
+                             // entonces todos sus hijos (child) deben renderizarse.
+                             
+                             // Creamos una bandera global del renderizado actual para saber si ya pasamos por el aislado
+                             const isUnderIsolatedBranch = isolatedNodeId === node.id || node._isUnderIsolatedBranch;
+                             
+                             // Pasamos esta propiedad al hijo para el siguiente nivel de recursión
+                             child._isUnderIsolatedBranch = isUnderIsolatedBranch || childContainsIsolated;
+
+                             // La decisión final:
+                             // Se muestra si el hijo contiene al nodo aislado (es la ruta hacia él),
+                             // O si el padre ya está dentro de la rama aislada (por tanto el hijo también).
+                             if (!childContainsIsolated && !isUnderIsolatedBranch) {
+                                 shouldRender = false;
+                             }
+                         }
+
+                         if (!shouldRender) return null;
+
+                         return (
+                           <TreeNode 
+                             key={child.id} 
+                             node={child} 
+                             expandedNodes={expandedNodes}
+                             selectedNode={selectedNode}
+                             onSelect={onSelect}
+                             onToggle={onToggle}
+                             isolatedNodeId={isolatedNodeId}
+                             onIsolate={onIsolate}
+                             completedTasks={completedTasks}
+                             onToggleTask={onToggleTask}
+                             forceExpand={forceExpand}
+                           />
+                         );
+                       })}
+                     </ul>
+                   )}
                  </div>
               )}
             </li>
@@ -282,19 +404,31 @@
 
         function App() {
           const [expandedNodes, setExpandedNodes] = useState({
-            'root': true, 'req': true, 'req-wp1': true, 'req-wp2': true, 'req-wp3': true,
-            '8k': true, '8k-wp1': true, '16k': true, '24k': true, '40k': true
+            'root': true, 
+            '8k': true, '8k-req': true, '8k-req-wp1': true, '8k-req-wp2': true, '8k-req-wp3': true, '8k-wp1': true, 
+            '16k': true, '16k-req': false, '16k-req-wp1': false, '16k-req-wp2': false, '16k-req-wp3': false,
+            '24k': true, '24k-req': false, '24k-req-wp1': false, '24k-req-wp2': false, '24k-req-wp3': false,
+            '40k': true, '40k-req': false, '40k-req-wp1': false, '40k-req-wp2': false, '40k-req-wp3': false
           });
           const [selectedNode, setSelectedNode] = useState(mindMapData);
+          const [isolatedNodeId, setIsolatedNodeId] = useState(null);
           
+          // Nuevo estado para llevar el registro de las tareas completadas
+          // Guarda un objeto donde la clave es el ID de la tarea y el valor es true/false
+          const [completedTasks, setCompletedTasks] = useState({});
+          
+          // Estados para el Zoom y el Panning (Arrastrar)
           const [zoom, setZoom] = useState(1);
           const [pan, setPan] = useState({ x: 0, y: 0 });
           const [isDragging, setIsDragging] = useState(false);
-          const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+          
+          // Ref para arrastrar sin saltos independientemente del zoom
+          const dragRef = useRef({ isDragging: false, lastX: 0, lastY: 0 });
           
           const containerRef = useRef(null);
           const contentRef = useRef(null);
 
+          // Función para auto-ajustar (Fit to screen) con protección
           const fitToScreen = () => {
             if (containerRef.current && contentRef.current) {
               const container = containerRef.current.getBoundingClientRect();
@@ -302,16 +436,21 @@
               const contentHeight = contentRef.current.scrollHeight;
               
               if(contentWidth > 0 && contentHeight > 0) {
+                  // Calcula la escala necesaria para que quepa todo el diagrama
                   const scaleX = (container.width * 0.95) / contentWidth; 
                   const scaleY = (container.height * 0.95) / contentHeight;
-                  
                   const newScale = Math.min(scaleX, scaleY, 1); 
+                  
+                  // Calcular Pan Y para centrar verticalmente
+                  const py = (container.height / newScale - contentHeight) / 2;
+                  
                   setZoom(newScale);
-                  setPan({ x: 0, y: 0 }); 
+                  setPan({ x: 0, y: py > 0 ? py : 0 }); 
               }
             }
           };
 
+          // Auto-ajustar al inicio y cuando cambia el tamaño de la ventana
           useEffect(() => {
             const timer = setTimeout(fitToScreen, 100); 
             const handleResize = () => fitToScreen();
@@ -320,87 +459,173 @@
                 clearTimeout(timer);
                 window.removeEventListener('resize', handleResize);
             }
-          }, [expandedNodes]);
+          }, []);
 
           const handleMouseDown = (e) => {
+            dragRef.current = { isDragging: true, lastX: e.clientX, lastY: e.clientY };
             setIsDragging(true);
-            setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
           };
 
           const handleMouseMove = (e) => {
-            if (!isDragging) return;
-            setPan({
-              x: e.clientX - dragStart.x,
-              y: e.clientY - dragStart.y
-            });
+            if (!dragRef.current.isDragging) return;
+            const dx = e.clientX - dragRef.current.lastX;
+            const dy = e.clientY - dragRef.current.lastY;
+            
+            dragRef.current.lastX = e.clientX;
+            dragRef.current.lastY = e.clientY;
+
+            setPan(prev => ({
+              x: prev.x + dx / zoom,
+              y: prev.y + dy / zoom
+            }));
           };
 
-          const handleMouseUp = () => setIsDragging(false);
+          const handleMouseUp = () => {
+            dragRef.current.isDragging = false;
+            setIsDragging(false);
+          };
+          
+          // Nuevo manejador para el evento Wheel (touchpad/rueda del ratón)
+          const handleWheel = (e) => {
+            // Evitar que el scroll del mapa mueva toda la página
+            e.preventDefault();
+            
+            // e.deltaX es el desplazamiento horizontal, e.deltaY es el vertical.
+            // Ajustamos según el nivel de zoom actual para que se sienta consistente.
+            setPan(prev => ({
+              x: prev.x - e.deltaX / zoom,
+              y: prev.y - e.deltaY / zoom
+            }));
+          };
+
+          // Función para manejar el marcado/desmarcado de tareas
+          const handleToggleTask = (taskId) => {
+            setCompletedTasks(prev => ({
+              ...prev,
+              [taskId]: !prev[taskId]
+            }));
+          };
+
+          // Función maestra para centrar un nodo específico fluidamente
+          const centerNode = (nodeId) => {
+            if (!containerRef.current || !contentRef.current) return;
+            const nodeEl = document.getElementById(`node-${nodeId}`);
+            if (!nodeEl) return;
+
+            const containerRect = containerRef.current.getBoundingClientRect();
+            const contentRect = contentRef.current.getBoundingClientRect();
+            const nodeRect = nodeEl.getBoundingClientRect();
+
+            // Centro del nodo en pantalla
+            const nodeCenterX = nodeRect.left + nodeRect.width / 2;
+            const nodeCenterY = nodeRect.top + nodeRect.height / 2;
+
+            // Coordenadas locales relativas al contenedor (independientes del pan y animaciones)
+            const lx = (nodeCenterX - contentRect.left) / zoom;
+            const ly = (nodeCenterY - contentRect.top) / zoom;
+
+            // Calcular el Pan exacto para ubicar el centro del nodo en el 1/3 superior de la pantalla
+            const contentWidth = contentRef.current.offsetWidth;
+            const targetPx = contentWidth / 2 - lx;
+            const targetPy = (containerRect.height / 3) / zoom - ly;
+
+            setPan({ x: targetPx, y: targetPy });
+          };
+
+          // NUEVO: Función para forzar la expansión desde el doble clic
+          const forceExpandNode = (id) => {
+            setExpandedNodes(prev => ({ ...prev, [id]: true }));
+            // Centrar con un ligero retraso para permitir que el DOM se dibuje
+            setTimeout(() => centerNode(id), 50);
+          };
 
           const toggleExpand = (id, e) => {
             e.stopPropagation();
-            setExpandedNodes(prev => ({ ...prev, [id]: !prev[id] }));
+            setExpandedNodes(prev => {
+              const isNowExpanded = !prev[id];
+              // Si se está expandiendo, calculamos y aplicamos el centrado después de 50ms para que el DOM se dibuje
+              if (isNowExpanded) {
+                setTimeout(() => centerNode(id), 50);
+              }
+              return { ...prev, [id]: isNowExpanded };
+            });
           };
 
           const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 1.5));
           const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.3));
 
           const expandAll = () => {
-            setExpandedNodes({ 'root': true, 'req': true, 'req-wp1': true, 'req-wp2': true, 'req-wp3': true, '8k': true, '8k-wp1': true, '16k': true, '24k': true, '40k': true });
+            setExpandedNodes({ 
+              'root': true, 
+              '8k': true, '8k-req': true, '8k-req-wp1': true, '8k-req-wp2': true, '8k-req-wp3': true, '8k-wp1': true, 
+              '16k': true, '16k-req': true, '16k-req-wp1': true, '16k-req-wp2': true, '16k-req-wp3': true,
+              '24k': true, '24k-req': true, '24k-req-wp1': true, '24k-req-wp2': true, '24k-req-wp3': true,
+              '40k': true, '40k-req': true, '40k-req-wp1': true, '40k-req-wp2': true, '40k-req-wp3': true
+            });
           };
 
           const collapseAll = () => {
-            setExpandedNodes({ 'root': true, 'req': false, 'req-wp1': false, 'req-wp2': false, 'req-wp3': false, '8k': false, '8k-wp1': false, '16k': false, '24k': false, '40k': false });
+            setExpandedNodes({ 
+              'root': true, 
+              '8k': false, '8k-req': false, '8k-req-wp1': false, '8k-req-wp2': false, '8k-req-wp3': false, '8k-wp1': false, 
+              '16k': false, '16k-req': false, '16k-req-wp1': false, '16k-req-wp2': false, '16k-req-wp3': false,
+              '24k': false, '24k-req': false, '24k-req-wp1': false, '24k-req-wp2': false, '24k-req-wp3': false,
+              '40k': false, '40k-req': false, '40k-req-wp1': false, '40k-req-wp2': false, '40k-req-wp3': false
+            });
           };
 
           return (
-            <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row font-sans overflow-hidden">
-              <div className="flex-1 flex flex-col relative h-[60vh] md:h-screen">
-                <div className="w-full flex justify-between items-center p-6 bg-slate-50/90 backdrop-blur z-30 border-b border-slate-200 shadow-sm relative">
-                  <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Plan de Mantenimiento</h1>
-                    <p className="text-sm text-slate-500">Haz clic y arrastra para moverte</p>
-                  </div>
-                  <div className="flex gap-2 items-center bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
-                    <button onClick={handleZoomOut} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Alejar">
-                      <ZoomOutIcon />
-                    </button>
-                    <span className="text-xs font-bold text-slate-600 w-10 text-center cursor-pointer hover:text-blue-600" onClick={fitToScreen} title="Ajustar a pantalla">
-                      {Math.round(zoom * 100)}%
-                    </span>
-                    <button onClick={handleZoomIn} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Acercar">
-                      <ZoomInIcon />
-                    </button>
-                    <div className="w-px h-6 bg-slate-200 mx-1"></div>
-                    <button onClick={fitToScreen} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Centrar y Ajustar al 100%">
-                      <FocusIcon />
-                    </button>
-                    <div className="w-px h-6 bg-slate-200 mx-1"></div>
-                    <button onClick={expandAll} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Expandir todo">
-                      <Maximize2Icon />
-                    </button>
-                    <button onClick={collapseAll} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Contraer todo">
-                      <Minimize2Icon />
-                    </button>
-                  </div>
+            <div className="fixed inset-0 bg-slate-50 flex flex-col md:flex-row font-sans overflow-hidden">
+              <div className="flex-1 relative overflow-hidden flex flex-col">
+                
+                {/* HUD: Título Flotante (Fijo) */}
+                <div className="absolute top-6 left-6 z-40 pointer-events-none">
+                  <h1 className="text-2xl font-bold text-slate-800 drop-shadow-md">Plan de Mantenimiento</h1>
+                  <p className="text-sm text-slate-600 font-medium drop-shadow-md">Haz clic y arrastra para moverte</p>
                 </div>
 
+                {/* HUD: Botonera Flotante (Fija) */}
+                <div className="absolute top-6 right-6 z-40 flex gap-2 items-center bg-white/90 backdrop-blur p-1 rounded-lg border border-slate-200 shadow-sm pointer-events-auto">
+                  <button onClick={handleZoomOut} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Alejar">
+                    <ZoomOutIcon />
+                  </button>
+                  <span className="text-xs font-bold text-slate-600 w-10 text-center cursor-pointer hover:text-blue-600" onClick={fitToScreen} title="Ajustar a pantalla">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <button onClick={handleZoomIn} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Acercar">
+                    <ZoomInIcon />
+                  </button>
+                  <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                  <button onClick={fitToScreen} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Centrar y Ajustar al 100%">
+                    <FocusIcon />
+                  </button>
+                  <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                  <button onClick={expandAll} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Expandir todo">
+                    <Maximize2Icon />
+                  </button>
+                  <button onClick={collapseAll} className="p-2 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded" title="Contraer todo">
+                    <Minimize2Icon />
+                  </button>
+                </div>
+
+                {/* Mapa Interactivo (Ocupa todo el fondo y se mueve por debajo de los botones) */}
                 <div 
                   ref={containerRef}
-                  className={`flex-1 overflow-hidden w-full flex justify-center items-start bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                  className={`absolute inset-0 flex justify-center items-start bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:20px_20px] ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
+                  onWheel={handleWheel}
                 >
                   <div 
                     ref={contentRef}
                     style={{ 
                       transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, 
                       transformOrigin: 'top center',
-                      transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                      transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)'
                     }} 
-                    className="min-w-max p-10 pb-32"
+                    className="min-w-max p-10 pt-28 pb-32"
                   >
                     <div className="css-tree">
                       <ul>
@@ -410,22 +635,29 @@
                           selectedNode={selectedNode}
                           onSelect={setSelectedNode}
                           onToggle={toggleExpand}
+                          isolatedNodeId={isolatedNodeId}
+                          onIsolate={setIsolatedNodeId}
+                          completedTasks={completedTasks}
+                          onToggleTask={handleToggleTask}
+                          forceExpand={forceExpandNode}
                         />
                       </ul>
                     </div>
                   </div>
                 </div>
                 
-                <div className="absolute bottom-6 left-0 w-full flex justify-center z-30 pointer-events-none">
-                  <div className="bg-white border border-slate-300 px-6 py-2 rounded-full shadow-lg text-sm font-semibold text-slate-600 flex items-center gap-2 pointer-events-auto">
+                {/* HUD: Leyenda Flotante (Fija abajo) */}
+                <div className="absolute bottom-6 left-0 w-full flex justify-center z-40 pointer-events-none">
+                  <div className="bg-white/90 backdrop-blur border border-slate-300 px-6 py-2 rounded-full shadow-lg text-sm font-semibold text-slate-600 flex items-center gap-2 pointer-events-auto">
                     <span>Paquetes de Trabajo (Work Packages)</span>
                     <span className="ml-4 pl-4 border-l border-slate-300 text-emerald-600">Tareas Específicas</span>
                   </div>
                 </div>
               </div>
 
-              <div className="w-full md:w-96 bg-white border-t md:border-t-0 md:border-l border-slate-200 shadow-xl p-6 flex flex-col h-[40vh] md:h-screen z-50 overflow-y-auto">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
+              {/* Panel Lateral Derecho (Fijo a un lado, NUNCA se mueve) */}
+              <div className="w-full md:w-96 h-[40vh] md:h-full bg-white border-t md:border-t-0 md:border-l border-slate-200 shadow-xl p-6 flex flex-col shrink-0 z-50 overflow-y-auto">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100 shrink-0">
                   <InfoIcon className="text-blue-500 w-6 h-6" />
                   <h2 className="text-lg font-bold text-slate-800">Detalles de la Etapa</h2>
                 </div>
@@ -452,9 +684,9 @@
                       <div className="mt-4">
                         <h5 className="font-bold text-slate-800 mb-2 text-sm">Tipos de Nodos:</h5>
                         <ul className="text-sm text-slate-600 list-disc pl-5 space-y-2">
-                            <li><strong>Hitos de horas:</strong> Representan el desgaste del equipo y el momento de intervención.</li>
-                            <li><strong>Paquetes de Trabajo (Grises):</strong> Divisiones operativas asignadas a equipos de trabajo técnicos.</li>
-                            <li><strong>Tareas Específicas (Verdes):</strong> Actividades puntuales o de planificación necesarias dentro de un paquete.</li>
+                            <li><strong>Hitos de horas / Fases:</strong> Representan etapas del proceso. <em>(Doble clic para aislar).</em></li>
+                            <li><strong>Paquetes de Trabajo (Grises):</strong> Divisiones operativas asignadas a equipos de trabajo técnicos. <em>(Doble clic para aislar).</em></li>
+                            <li><strong>Tareas Específicas (Verdes):</strong> Actividades puntuales necesarias. Puedes marcarlas como completadas haciendo clic en su casilla.</li>
                         </ul>
                       </div>
                     )}
